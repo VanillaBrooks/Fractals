@@ -4,6 +4,8 @@ use std::fs::File;
 use std::io::BufWriter;
 use png::HasParameters;
 
+use num;
+
 pub fn zero_pad_directory(input_dir: &str) {
     let dir = std::fs::read_dir(input_dir);
 
@@ -42,7 +44,64 @@ pub fn zero_pad_directory(input_dir: &str) {
 
     }
 }
+pub struct Stepper <T>{
+    start: T,
+    end: T,
+    step_size: T,
+    last_val: T,
+    pub max_iterations: T
+}
 
+impl <T>Stepper <T>
+    where T: std::ops::Sub<Output=T> + std::ops::Div<Output=T> +  std::cmp::PartialOrd + Copy + std::ops::Neg<Output=T> + num::Signed
+    {
+    pub fn new(start: T, end: T, mut step_size: T) -> Self{
+        if step_size.is_negative() {
+            panic!{"step size should be positive"}
+        }
+
+
+        if end < start{
+            step_size = -step_size
+        }
+
+        let m_iter = (start-end)/step_size;
+        Stepper{
+            start: start,
+            end: end, 
+            step_size: step_size,
+            last_val: start,
+            max_iterations: m_iter,
+        }
+    }
+}
+
+
+impl <T> Iterator for Stepper <T>
+    where T: std::cmp::PartialOrd + std::ops::Add<Output=T> + Copy +  num::Signed
+    {
+    type Item = T;
+
+    fn next(&mut self) -> Option<Self::Item> {
+
+        let new_val = self.last_val + self.step_size;         
+        if self.step_size.is_negative(){
+            if new_val < self.end {None}
+            else {
+                self.last_val = new_val;
+                Some(new_val)
+            }
+        }
+        else {
+            if new_val > self.end {None}
+            else {
+                self.last_val = new_val;
+                Some(new_val)
+            }
+        }
+    
+    }
+}
 
 pub fn write_png(path: &str, data: &[u8], img: &image::ImageConfig) {
     let file = File::create(path).unwrap();
@@ -55,3 +114,4 @@ pub fn write_png(path: &str, data: &[u8], img: &image::ImageConfig) {
     writer.write_image_data(data).unwrap(); // Save
 
 }
+

@@ -24,24 +24,23 @@ fn main() {
 
     let color = coloring::Coloring::new(r, g, b, color_center);
 
+    let run_type = run::RunType::Function;
 
-
-    let img_config = image::ImageConfig::new(1080, 1080, zoom, r"E:\fractals\steps4");
+    let img_config = image::ImageConfig::new(40000,40000, zoom, r"E:\fractals\steps4");
 
 
     // let const_fn = |x|  0.7885 * Complex::new(0., x).exp();
-    let const_fn = |x| 0.7885 * Complex::new(0., 2.989).exp();
+    // let const_fn = |x| 0.7885 * Complex::new(0., 2.989).exp();
 
 
     let c = 0.7885 * Complex::new(0., 2.989).exp();
 
 
-    // let data = 
-    //     julia::julia(2., c, &color, &img_config);
+    // let data = julia::julia(2., c, &color, &img_config);
 
     // utils::write_png(r".\fractal.png", &data, &img_config);
 
 
-    run::run_animation(start, end, precision, &color, img_config, const_fn);
-}
+    // run::run_animation(start, end, precision, &color, img_config, const_fn);
 
+}

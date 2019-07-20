@@ -1,5 +1,5 @@
 use num::complex::Complex;
-use super::coloring::Coloring;
+use super::coloring::Colorify;
 use super::image;
 
 
@@ -7,10 +7,10 @@ use rayon::{self, prelude::*};
 
 const MAX_ITERATIONS : u32 = 1000;
 
-pub fn julia(
+pub fn julia<T:Colorify + Sync+ Send>(
     power: f64, 
-    c: Complex<f64>, 
-    colors: &Coloring,
+    c: &Complex<f64>, 
+    colors: &T,
     img: &image::ImageConfig
     ) -> Vec<u8>{
 
@@ -40,32 +40,11 @@ pub fn julia(
                 iteration += 1;
             }
 
-            if iteration == MAX_ITERATIONS{     // did not diverge
-                (0u8 , 0u8, 0u8)
-            } else {                            //diverges
+            let z = Complex::new(zx, zy);
 
-                /*
-                 
-                    Color calculation:
-                 
-                 */
+            colors.colorify(iteration, z)
 
-                let iteration = iteration as f64;
-                let abs_z = ((zx * zx) + (zy * zy)).sqrt();
-
-                let z_ = Complex::new(zx, zy);
-
-                let diff = iteration + 1. - ((abs_z.log(10.).log(10.))/2f64.log(10.));
-                // let diff = iteration + 1. - z_.norm().log(2.).log(10.);
-
-
-                let r = (colors.center * (diff * colors.red.frequency + colors.red.phase).sin()) + colors.red.delta;
-                let g = (colors.center * (diff * colors.green.frequency + colors.green.phase).sin()) + colors.green.delta;
-                let b = (colors.center * (diff * colors.blue.frequency + colors.blue.phase).sin()) + colors.blue.delta;
-
-                (r as u8, g as u8, b as u8)
-
-            }
+            
         }).collect::<Vec<_>>()
     })
     .map(|vec|{

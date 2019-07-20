@@ -1,37 +1,44 @@
 use num::{self, Complex};
 use super::image;
-use super::coloring;
+use super::coloring::{self, Colorify};
 use super::julia;
 use super::utils;
 
+
+
 pub fn run_animation(
-    start: f64, 
-    end: f64, 
-    precision: f64, 
+    iterable_values: utils::Stepper<f64>,
     color: &coloring::Coloring, 
     mut img: image::ImageConfig,
+    animation_type: RunType,
     constant_eval: impl Fn(f64) -> Complex<f64>
     ) {
 
     let mut counter = 0;
-    let total : f64= (end- start).abs() / precision;
 
-    let iter_vals = float_iterator(start, end, precision);
+    // let iter_vals = utils::Stepper::new(start, end, precision);
 
-    for i in iter_vals {
+    let mut julia_const = constant_eval(0.);
+    let total = iterable_values.max_iterations;
 
-        let c = constant_eval(i);
+    for i in iterable_values {
 
-        img.zoom = i;
+        // update variables based on what kind of animation we are creating
+        match animation_type{
+            RunType::Zoom => {img.zoom = i;},
+            RunType::Function => {julia_const = constant_eval(i)}
+        }
 
-        let data = julia::julia(2., c, &color, &img);
+        // run julia set calculation
+        let data = julia::julia(2., &julia_const, color, &img);
 
-
+        // save intermediate data
         counter += 1;
         let path = format!{"step{}.png", counter};
         let mut path_ = img.save_location.clone().to_string();
         path_.push_str(r"\");
         path_.push_str(&path);
+
 
         if counter % 10 == 0 {
             println!{"{} % done, i value {} ",100. * counter as f64 / total, i}
@@ -42,14 +49,7 @@ pub fn run_animation(
 }
 
 
-fn float_iterator(start: f64, end: f64, precision: f64) ->impl Iterator<Item=f64>{
-    let start = (start / precision) as u64;
-    let end = (end / precision) as u64;
-
-    dbg!{start}; dbg!{end};
-
-
-    // (end..start).map(move |x| x as  f64 * precision).into_iter()            // end < start
-    (start..end).map(move |x| x as  f64 * precision).into_iter()         // start < end
-
+pub enum RunType{
+    Zoom,
+    Function
 }
