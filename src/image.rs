@@ -12,13 +12,13 @@ pub struct ImageConfig <'a>{
 }
 
 impl <'a>ImageConfig <'a> {
-    pub fn new(x_dim: int, y_dim: int, zoom: float, folder: &'a str) -> Self{
+    pub fn new(x_dim: int, zoom: float, folder: &'a str) -> Self{
         let x = 
             Self{
                 x_dim: x_dim,
-                y_dim: y_dim,
+                y_dim: x_dim,
                 x_dim_f: x_dim as float,
-                y_dim_f: y_dim as float,
+                y_dim_f: x_dim as float,
                 zoom: zoom,
                 save_location: folder
             };

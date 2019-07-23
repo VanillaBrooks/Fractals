@@ -115,3 +115,23 @@ pub fn write_png(path: &str, data: &[u8], img: &image::ImageConfig) {
 
 }
 
+
+use num::Complex;
+
+pub struct FractalStep <'a> {
+    pub max: Option<&'a u32>,
+    pub min: Option<&'a u32>,
+    pub iterations: u32,
+    pub current_z: Complex<f64>
+}
+
+impl <'a> FractalStep <'a> {
+    pub fn new(min: Option<&'a u32>, max: Option<&'a u32>, iterations: u32, current_z: Complex<f64>) -> Self {
+        FractalStep {
+            max: max,
+            min: min,
+            iterations:iterations,
+            current_z: current_z
+        }
+    }
+}

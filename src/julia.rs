@@ -1,11 +1,23 @@
 use num::complex::Complex;
 use super::coloring::Colorify;
 use super::image;
+use super::utils;
 
 
 use rayon::{self, prelude::*};
 
 const MAX_ITERATIONS : u32 = 1000;
+
+macro_rules! push {
+    ($vector:ident, $($item:expr),+) => {
+
+        $(
+            $vector.push($item);
+        )+
+
+    };
+}
+
 
 pub fn julia<T:Colorify + Sync+ Send>(
     power: f64, 
@@ -14,6 +26,8 @@ pub fn julia<T:Colorify + Sync+ Send>(
     img: &image::ImageConfig
     ) -> Vec<u8>{
 
+
+    let mut steps = 
     (0..img.x_dim).into_iter().collect::<Vec<_>>().par_iter().map(move |x|{
         (0..img.y_dim).into_iter().map(|y|{
 
@@ -39,29 +53,46 @@ pub fn julia<T:Colorify + Sync+ Send>(
 
                 iteration += 1;
             }
-
             let z = Complex::new(zx, zy);
 
-            colors.colorify(iteration, z)
+            utils::FractalStep::new(None, None, iteration, z)
 
-            
         }).collect::<Vec<_>>()
     })
-    .map(|vec|{
-        let mut inner:  Vec<u8> = Vec::new();
-        for i in vec {
-            push_vals(&mut inner, i)
-        }
-        inner
-    })
     .flatten()
-    .collect::<Vec<_>>()
+    .collect::<Vec<_>>();
 
-}
+    let mut max = 0;
+    let mut min = MAX_ITERATIONS;
 
 
-fn push_vals<T>(vec: &mut Vec<T>, vals :(T, T, T)) {
-    vec.push(vals.0);
-    vec.push(vals.1);
-    vec.push(vals.2);
+    // used to find the min and max of all the items 
+    for i in 0..(img.x_dim * img.y_dim) {
+        let var = 
+            unsafe{
+                steps.get_unchecked(i)
+            };
+
+        if var.iterations > max && var.iterations != MAX_ITERATIONS{
+            max = var.iterations
+        }
+        if var.iterations < min {
+            min = var.iterations
+        }
+    }
+
+    steps.into_par_iter()
+        .map(|mut x| {
+        
+            x.max = Some(&max);
+            x.min = Some(&min);
+
+            let c = colors.colorify(x);
+
+            vec![c.0, c.1, c.2]
+        })
+        .flatten()
+        .collect::<Vec<_>>()
+
+
 }

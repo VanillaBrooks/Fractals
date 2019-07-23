@@ -6,19 +6,17 @@ use super::utils;
 
 
 
-pub fn run_animation(
+pub fn run_animation<T:Colorify + Send + Sync>(
     iterable_values: utils::Stepper<f64>,
-    color: &coloring::Coloring, 
+    color: &T, 
     mut img: image::ImageConfig,
     animation_type: RunType,
-    constant_eval: impl Fn(f64) -> Complex<f64>
     ) {
 
     let mut counter = 0;
 
-    let mut folder_count = 0;
+    let mut julia_const;
 
-    let mut julia_const = constant_eval(0.);
     let total = iterable_values.max_iterations;
 
     let mut saver = SaveFile::new(&img.save_location);
@@ -26,15 +24,23 @@ pub fn run_animation(
     for i in iterable_values {
 
         // update variables based on what kind of animation we are creating
-        match animation_type{
-            RunType::Zoom => {img.zoom = i;},
-            RunType::Function => {julia_const = constant_eval(i)}
+        match &animation_type{
+            RunType::Zoom((z, jc)) => {
+                img.zoom = z(i);
+
+                //TODO use mem unint here 
+                julia_const = *jc;
+            },
+            RunType::Function(f) => {
+                julia_const = f(i)
+            }
         }
 
         // run julia set calculation
-        let data = julia::julia(2., &julia_const, color, &img);
+        let data= julia::julia(2., &julia_const, color, &img);
 
         counter += 1;
+
         if counter % 10 == 0 {
             println!{"{} % done, i value {} ",100. * counter as f64 / total, i}
         }
@@ -46,8 +52,8 @@ pub fn run_animation(
 
 
 pub enum RunType{
-    Zoom,
-    Function
+    Zoom((Box<dyn Fn(f64) -> f64 >, Complex<f64>)),
+    Function(Box<dyn Fn(f64)-> Complex<f64>>)
 }
 
 
